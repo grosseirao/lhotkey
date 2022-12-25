@@ -1,1 +1,0 @@
-/usr/bin/gcc -O3 -DNDEBUG -rdynamic CMakeFiles/iodevice.dir/main.c.o -o iodevice  -levdev -lX11 -lxcb -lxcb-icccm -lxcb -lxcb-icccm 
