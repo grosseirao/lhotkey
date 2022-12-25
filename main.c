@@ -76,19 +76,23 @@ void* hotkey(void* ptr) {
 
 void update_target(Display* dpy) {
     Window focused;
-    XClassHint class_hint;
+    XClassHint *class_hint = malloc(sizeof(XClassHint));
     int revert;
+
     XGetInputFocus(dpy, &focused, &revert);
 
-    XGetClassHint(dpy, focused, &class_hint);
+    printf("window id %d\n", focused);
 
-    target_focused = !strcmp(class_hint.res_class, name_target);
+    XGetClassHint(dpy, focused, class_hint);
 
-    // printf("Window class type: %s\n", class_hint.res_class);
-    // printf("focado no target: %d\n", target_focused);
+    printf("class pointer: %d\n", class_hint->res_class);
+    printf("Window class type: %s\n", class_hint->res_class);
 
-    XFree(class_hint.res_name);
-    XFree(class_hint.res_class);
+    target_focused = !strcmp(class_hint->res_class, name_target);
+
+    printf("focado no target: %d\n", target_focused);
+
+    XFree(class_hint);
 }
 
 void* events_threatment(void* ptr) {
@@ -99,7 +103,7 @@ void* events_threatment(void* ptr) {
     XSelectInput(display, root_window, PropertyChangeMask);
 
     update_target(display);
-    while (!XNextEvent(display, &event) ) {
+    while (!XNextEvent(display, &event)) {
         if (!strcmp(XGetAtomName(display, event.xproperty.atom), "_NET_ACTIVE_WINDOW")) {
             update_target(display);
         }
