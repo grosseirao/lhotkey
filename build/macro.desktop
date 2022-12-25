@@ -1,0 +1,19 @@
+[Desktop Entry]
+Comment[pt_BR]=
+Comment=
+Exec=kdesu /home/felipe/Documentos/inputdevice/build/iodevice
+GenericName[pt_BR]=
+GenericName=
+Icon=system-run
+MimeType=
+Name[pt_BR]=macro
+Name=macro
+Path=
+StartupNotify=true
+Terminal=false
+TerminalOptions=
+Type=Application
+X-DBUS-ServiceName=
+X-DBUS-StartupType=
+X-KDE-SubstituteUID=false
+X-KDE-Username=
