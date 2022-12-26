@@ -85,8 +85,11 @@ void update_target(Display* dpy) {
 
     XGetClassHint(dpy, focused, class_hint);
 
-    printf("class pointer: %d\n", class_hint->res_class);
+    printf("class pointer: %d\n", class_hint);
+    printf("class type pointer: %d\n", class_hint->res_class);
     printf("Window class type: %s\n", class_hint->res_class);
+
+    if(class_hint->res_class) return;
 
     target_focused = !strcmp(class_hint->res_class, name_target);
 
