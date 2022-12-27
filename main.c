@@ -80,69 +80,38 @@ void update_target(Display* dpy) {
     Window focused;
     XClassHint* class_hint = malloc(sizeof(XClassHint));
     int revert;
+    if (!XGetInputFocus(dpy, &focused, &revert)) {
+        printf("erro ao obter janela focada\n");
+        return;
+    }
 
-    XGetInputFocus(dpy, &focused, &revert);
-    if(!XGetClassHint(dpy, focused, class_hint)) return;
+    if(focused == 1) {
+        printf("erro janela focada invalida\n");
+        return;
+    }
+    if (!XGetClassHint(dpy, focused, class_hint)) {
+        printf("erro ao obter classe da janela focada\n");
+        return;
+    }
 
     target_focused = !strcmp(class_hint->res_class, name_target);
 
     printf("window active: %s\n", class_hint->res_class);
-    
+
     XFree(class_hint);
 }
 
 void* events_treatment(void* ptr) {
     Display* display = XOpenDisplay(NULL);
     Window root_window = DefaultRootWindow(display);
-    XEvent event;
+    XEvent* event = malloc(sizeof(XEvent));
 
     XSelectInput(display, root_window, PropertyChangeMask);
 
-    update_target(display);
-    while (!XNextEvent(display, &event)) {
-        if (!strcmp(XGetAtomName(display, event.xproperty.atom), "_NET_ACTIVE_WINDOW")) {
+    while (!XNextEvent(display, event)) {
+        if (event->xproperty.atom == 388) {
             update_target(display);
         }
     }
     XCloseDisplay(display);
-}
-
-void xcb_update_target(xcb_connection_t* conn) {
-    xcb_window_t focused;
-    xcb_get_input_focus_cookie_t focus_cookie = xcb_get_input_focus(conn);
-    xcb_get_input_focus_reply_t* focus_reply = xcb_get_input_focus_reply(conn, focus_cookie, NULL);
-    focused = focus_reply->focus;
-    free(focus_reply);
-
-    xcb_icccm_get_wm_class_reply_t class_hint;
-    if (xcb_icccm_get_wm_class_reply(conn, xcb_icccm_get_wm_class(conn, focused), &class_hint, NULL) == 1) {
-        target_focused = !strncmp(class_hint.class_name, name_target, strlen(name_target));
-        xcb_icccm_get_wm_class_reply_wipe(&class_hint);
-    }
-    printf("class type: %s", class_hint.class_name);
-}
-
-void* xcb_events_treatment(void* ptr) {
-    xcb_connection_t* conn = xcb_connect(NULL, NULL);
-    xcb_screen_t* screen = xcb_setup_roots_iterator(xcb_get_setup(conn)).data;
-    xcb_window_t root_window = screen->root;
-
-    uint32_t values[] = { XCB_EVENT_MASK_PROPERTY_CHANGE };
-    xcb_change_window_attributes(conn, root_window, XCB_CW_EVENT_MASK, values);
-
-    xcb_update_target(conn);
-    xcb_generic_event_t* event;
-    while ((event = xcb_wait_for_event(conn))) {
-        if (event->response_type == XCB_PROPERTY_NOTIFY) {
-            xcb_property_notify_event_t* property_notify_event = (xcb_property_notify_event_t*)event;
-            xcb_get_atom_name_cookie_t atom_name_cookie = xcb_get_atom_name(conn, property_notify_event->atom);
-            xcb_get_atom_name_reply_t* atom_name_reply = xcb_get_atom_name_reply(conn, atom_name_cookie, NULL);
-            if (strncmp(xcb_get_atom_name_name(atom_name_reply), "_NET_ACTIVE_WINDOW", strlen("_NET_ACTIVE_WINDOW")) == 0) {
-                xcb_update_target(conn);
-            }
-            free(atom_name_reply);
-        }
-        free(event);
-    }
-    xcb_disconnect(conn);
 }
