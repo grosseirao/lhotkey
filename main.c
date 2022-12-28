@@ -13,6 +13,7 @@
 #include <xcb/xcb_icccm.h>
 #include <string.h>
 #include "input.c"
+#include "device.c"
 
 struct libevdev* dev;
 struct libevdev_uinput* uidev;
@@ -23,18 +24,16 @@ char* name_target = "Kakele";
 int target_focused = 0;
 
 void* events_treatment(void* ptr);
-void* xcb_events_treatment(void* ptr);
 void* hotkey(void* ptr);
 
 int main(int argc, char const* argv[]) {
-    pthread_t thread;
-    pthread_create(&thread, NULL, &events_treatment, NULL);
-
-
     int fd = open("/dev/input/by-id/usb-04d9_USB_Gaming_Mouse-event-mouse", O_RDONLY);
     libevdev_new_from_fd(fd, &dev);
     libevdev_uinput_create_from_device(dev, LIBEVDEV_UINPUT_OPEN_MANAGED, &uidev);
     struct input_event* ev = malloc(sizeof(struct input_event));
+
+    pthread_t thread;
+    pthread_create(&thread, NULL, &events_treatment, NULL);
 
     libevdev_grab(dev, LIBEVDEV_GRAB);
     while (libevdev_next_event(dev, LIBEVDEV_READ_FLAG_NORMAL, ev) >= 0) {
@@ -46,7 +45,6 @@ int main(int argc, char const* argv[]) {
                         pthread_create(&thread, NULL, &hotkey, NULL);
                         break;
                     }
-
                 }
                 // libevdev_uinput_write_event(uidev, EV_MSC, MSC_SCAN, libevdev_get_event_value(dev, EV_MSC, ev->code));
                 libevdev_uinput_write_event(uidev, ev->type, ev->code, ev->value);
@@ -85,19 +83,18 @@ void update_target(Display* dpy) {
         return;
     }
 
-    if(focused == 1) {
+    if (focused == 1) {
         printf("erro janela focada invalida\n");
         return;
     }
+
     if (!XGetClassHint(dpy, focused, class_hint)) {
         printf("erro ao obter classe da janela focada\n");
         return;
     }
 
     target_focused = !strcmp(class_hint->res_class, name_target);
-
-    printf("window active: %s\n", class_hint->res_class);
-
+    // printf("window active: %s\n", class_hint->res_class);
     XFree(class_hint);
 }
 
@@ -113,5 +110,6 @@ void* events_treatment(void* ptr) {
             update_target(display);
         }
     }
+    
     XCloseDisplay(display);
 }
