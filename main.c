@@ -3,25 +3,17 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdlib.h>
-#include <errno.h>
 #include <stdio.h>
 #include <pthread.h>
-#include <time.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#include <xcb/xcb.h>
-#include <xcb/xcb_icccm.h>
 #include <string.h>
 #include "input.c"
 #include "device.c"
+#include "event.c"
 
 struct libevdev* dev;
 struct libevdev_uinput* uidev;
-int state = 0;
-
-
-char* name_target = "Kakele";
-int target_focused = 0;
 
 void* events_treatment(void* ptr);
 void* hotkey(void* ptr);
@@ -72,44 +64,4 @@ void* hotkey(void* ptr) {
     // printf("ended\n");
     state = 0;
     return 0;
-}
-
-void update_target(Display* dpy) {
-    Window focused;
-    XClassHint* class_hint = malloc(sizeof(XClassHint));
-    int revert;
-    if (!XGetInputFocus(dpy, &focused, &revert)) {
-        printf("erro ao obter janela focada\n");
-        return;
-    }
-
-    if (focused == 1) {
-        printf("erro janela focada invalida\n");
-        return;
-    }
-
-    if (!XGetClassHint(dpy, focused, class_hint)) {
-        printf("erro ao obter classe da janela focada\n");
-        return;
-    }
-
-    target_focused = !strcmp(class_hint->res_class, name_target);
-    // printf("window active: %s\n", class_hint->res_class);
-    XFree(class_hint);
-}
-
-void* events_treatment(void* ptr) {
-    Display* display = XOpenDisplay(NULL);
-    Window root_window = DefaultRootWindow(display);
-    XEvent* event = malloc(sizeof(XEvent));
-
-    XSelectInput(display, root_window, PropertyChangeMask);
-
-    while (!XNextEvent(display, event)) {
-        if (event->xproperty.atom == 388) {
-            update_target(display);
-        }
-    }
-    
-    XCloseDisplay(display);
 }
