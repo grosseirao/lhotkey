@@ -1,6 +1,7 @@
+#pragma once
 #include <X11/Xlib.h>
 
-int state = 0;
+
 char* name_target = "Kakele";
 int target_focused = 0;
 
