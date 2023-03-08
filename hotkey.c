@@ -17,53 +17,39 @@
 lua_State *L;
 
 struct Data {
-    pthread_t thread;
     struct libevdev* dev;
     struct libevdev_uinput* uidev;
     int key;
 };
 
 void hotkey_createx() {
-  lua_pushglobaltable(L);
-    lua_pushnil(L);
-    while (lua_next(L, -2) != 0) {
-        if (lua_isfunction(L, -1)) {
-            const char *func_name = lua_tostring(L, -2);
-            if(libevdev_event_code_from_name(EV_KEY, func_name))
+    lua_pushglobaltable(L);  // Empilhe a tabela global no topo da pilha
+
+    lua_pushnil(L);  // Empilhe um valor nulo na pilha (inicialmente, a chave)
+    while (lua_next(L, -2) != 0) {  // Percorre a tabela global
+        if (lua_isfunction(L, -1)) {  // Verifica se o valor atual é uma função
+            const char *func_name = lua_tostring(L, -2);  // Obtém o nome da função
+            if(libevdev_event_code_from_name(EV_KEY, func_name) >= 0)
             printf("- %s\n", func_name);
         }
-        lua_pop(L, 1);
+        lua_pop(L, 1);  // Remove o valor da função da pilha
     }
-    lua_pop(L, 1); // remove a tabela global da pilha
+
+    lua_pop(L, 1);
 }
 
-struct Data* hotkey_create_data(char* device, int key) {
-    struct Data* data;
-    struct libevdev* dev;
-    struct libevdev_uinput* uidev;
-    int fd; 
-
-    fd = open(device, O_RDONLY);
-    data = malloc(sizeof(struct Data));
-    libevdev_new_from_fd(fd, &dev);
-    libevdev_uinput_create_from_device(dev, LIBEVDEV_UINPUT_OPEN_MANAGED, &uidev);
-    libevdev_grab(dev, LIBEVDEV_GRAB);
-
-    data->dev = dev;
-    data->uidev = uidev;
-    data->key = key;
+struct Data* hotkey_create_data(int key) {
+    struct Data* data = malloc(sizeof(struct Data));
     
-    if (
-    libevdev_has_event_type(dev, EV_KEY) && 
-    libevdev_has_event_code(dev, EV_KEY, BTN_LEFT) && 
-    libevdev_has_event_code(dev, EV_KEY, BTN_RIGHT)) {
-        mosinput = uidev;
-        mosdev = dev;
+    if (libevdev_has_event_code(mosdev, EV_KEY, key)) {
+        data->dev = mosdev;
+        data->uidev = mosinput;
     } else
-    if (libevdev_has_event_type(dev, EV_KEY)) {
-        kbdinput = uidev;
-        kbddev = dev;
+    if (libevdev_has_event_code(kbddev, EV_KEY, key)) {
+        data->dev = kbddev;
+        data->uidev = kbdinput;
     }
+    data->key = key;
     return data;
 }
 
@@ -97,8 +83,8 @@ void hotkey_device_init(struct Data *data) {
 
 void load_script() {
     pool = g_thread_pool_new(hotkey_validator, NULL, -1, FALSE, NULL);
-    struct Data *hkmouse = hotkey_create_data("/dev/input/by-id/usb-04d9_USB_Gaming_Mouse-event-mouse", BTN_RIGHT);
-    struct Data *hkkbd = hotkey_create_data("/dev/input/by-id/usb-04d9_USB_Gaming_Mouse-if01-event-kbd", KEY_8);
+    struct Data *hkmouse = hotkey_create_data(BTN_RIGHT);
+    struct Data *hkkbd = hotkey_create_data(KEY_8);
 
     L = luaL_newstate();
     luaL_openlibs(L);
@@ -120,7 +106,6 @@ void load_script() {
     lua_setglobal(L, "target");
 
     luaL_dofile(L, "func.lua");
-    // int result = luaL_loadfile(L, "func.lua");
 
     // hotkey_createx();
 

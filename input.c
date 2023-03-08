@@ -5,11 +5,7 @@
 #include <libevdev/libevdev.h>
 #include <linux/input-event-codes.h>
 #include <unistd.h>
-
-struct libevdev *kbddev;
-struct libevdev_uinput *kbdinput;
-struct libevdev *mosdev;
-struct libevdev_uinput *mosinput;
+#include "device.c"
 
 void input_key(const struct libevdev_uinput *device, unsigned int key, int value) {
     if(!target_focused) return;

@@ -12,10 +12,12 @@
 #include "input.c"
 #include "event.c"
 #include "hotkey.c"
+#include "device.c"
 
 int main(int argc, char const* argv[]) {
     pthread_t thread;
     pthread_create(&thread, NULL, &events_treatment, NULL);
+    hotkey_device_pool_init();
     load_script();
     pthread_join(thread, NULL);
     return 0;
