@@ -1,11 +1,19 @@
 #pragma once
 #include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#include <lauxlib.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-
-char* name_target = "Kakele";
+char* name_target = NULL;
 int target_focused = 0;
 
 void update_target(Display* dpy) {
+    if(!name_target) {
+        target_focused = 1;
+        return;
+    }
     Window focused;
     XClassHint* class_hint = malloc(sizeof(XClassHint));
     int revert;
@@ -46,4 +54,12 @@ void* events_treatment(void* ptr) {
     
     XCloseDisplay(display);
     return NULL;
+}
+
+static int hotkey_target_set(struct lua_State* L) {
+    char *name = strdup(luaL_checkstring(L, 1));
+    name_target = name;
+    target_focused = 0;
+    printf("selected target: %s\n", name_target);
+    return 0;
 }
