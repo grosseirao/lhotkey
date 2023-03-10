@@ -1,4 +1,4 @@
-target("Kakele")
+-- target("Kakele")
 State = false
 function KEY_8()
     State = not State
