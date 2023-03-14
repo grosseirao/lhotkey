@@ -5,11 +5,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 
 char* name_target = NULL;
 int target_focused = 0;
+pthread_t event_thread;
 
-void update_target(Display* dpy) {
+void lhk_event_target_update(Display* dpy) 
+{
     if(!name_target) {
         target_focused = 1;
         return;
@@ -37,18 +40,18 @@ void update_target(Display* dpy) {
     XFree(class_hint);
 }
 
-void* events_treatment(void* ptr) {
+void* lhk_event_handler_thread(void* ptr) {
     Display* display = XOpenDisplay(NULL);
     Window root_window = DefaultRootWindow(display);
     XEvent* event = malloc(sizeof(XEvent));
 
     XSelectInput(display, root_window, PropertyChangeMask);
 
-    update_target(display);
+    lhk_event_target_update(display);
     while (!XNextEvent(display, event)) {
         //printf("event %s %d\n", XGetAtomName(display, event->xproperty.atom), event->xproperty.atom);
         if (strcmp(XGetAtomName(display, event->xproperty.atom),"_NET_ACTIVE_WINDOW") == 0) {
-            update_target(display);
+            lhk_event_target_update(display);
         }
     }
     
@@ -56,10 +59,6 @@ void* events_treatment(void* ptr) {
     return NULL;
 }
 
-static int hotkey_target_set(struct lua_State* L) {
-    char *name = strdup(luaL_checkstring(L, 1));
-    name_target = name;
-    target_focused = 0;
-    printf("selected target: %s\n", name_target);
-    return 0;
+void lhk_event_init() {
+    pthread_create(&event_thread, NULL, &lhk_event_handler_thread, NULL);
 }
