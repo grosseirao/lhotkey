@@ -1,15 +1,7 @@
-target("Kakele")
+target("Terraria.bin.x86_64")
 State = false
-function KEY_8()
+function KEY_F9()
     State = not State
-    input_key(9, State and 1 or 0)
-    -- print("O resultado é: " .. tostring(State) .. "\n")
-end
-
-function BTN_RIGHT()
-    while get_key_state(273) do
-        input_key_stroke(273)
-        sleep(math.random(95, 128))
-    end
-    -- print("BTN_RIGHT released")
+    input_key("BTN_LEFT", State and 1 or 0)
+    print("O resultado é: F9\n")
 end
